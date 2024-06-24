@@ -48,9 +48,17 @@ jobs:
         shell: powershell
         run: |
           wsl --update
-          wsl --version
           wsl --set-default-version 2
-          wsl --install Ubuntu-22.04 --no-launch
+          wsl --version
+          # `wsl --install Ubuntu-22.04 --no-launch` has been having issues in CI since 2024-06-14
+          Invoke-WebRequest https://github.com/microsoft/WSL/raw/master/distributions/DistributionInfo.json |
+            Select-Object -ExpandProperty Content |
+            ConvertFrom-JSON |
+            Select-Object -ExpandProperty Distributions |
+            Where-Object Name -EQ "Ubuntu" |
+            Select-Object -ExpandProperty Amd64PackageUrl |
+            % { Invoke-WebRequest $_ -OutFile Ubuntu.AppxBundle }
+          Add-AppxPackage Ubuntu.AppxBundle
           ubuntu2204 install --root
           wsl --set-default Ubuntu-22.04
           wsl --list --verbose
